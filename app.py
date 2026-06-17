@@ -311,7 +311,7 @@ with _C:
     with c1:
         st.markdown('<div class="scan-btn">', unsafe_allow_html=True)
         if st.button("📷 Scan", use_container_width=True, key="btn_scan"):
-            st.session_state["show_scanner"] = not st.session_state.get("show_scanner", False)
+            st.session_state["show_scanner"] = True
         st.markdown('</div>', unsafe_allow_html=True)
     with c2:
         st.markdown('<div class="go-btn">', unsafe_allow_html=True)
@@ -328,21 +328,36 @@ with _C:
         st.session_state["_clear_requested"] = True
         st.rerun()
 
-    # ── Barcode scanner via camera input + pyzbar ────────────────────────────
+    # ── Barcode scanner via camera input ─────────────────────────────────────
     if st.session_state.get("show_scanner"):
-        from PIL import Image
-        from pyzbar.pyzbar import decode as zbar_decode
-        img_file = st.camera_input("Point camera at barcode and take photo", key="cam_input")
-        if img_file:
-            img = Image.open(img_file)
-            barcodes = zbar_decode(img)
-            if barcodes:
-                code = barcodes[0].data.decode("utf-8")
+        st.markdown("""
+        <div style="background:#1a2a3a;border-radius:12px;padding:14px 16px;margin-bottom:8px;
+          color:#fff;font-size:13px;line-height:1.6">
+          <b style="color:#F5C500">📷 How to scan on your phone:</b><br>
+          1. Take a clear photo of the barcode below<br>
+          2. App will auto-read it — hold phone steady in good light
+        </div>""", unsafe_allow_html=True)
+        img_file = st.camera_input("", key="cam_input", label_visibility="collapsed")
+        col_cancel, _ = st.columns([1, 3])
+        with col_cancel:
+            if st.button("✕ Cancel", key="btn_cancel_scan"):
                 st.session_state["show_scanner"] = False
-                st.session_state["bc_input"] = code
                 st.rerun()
-            else:
-                st.warning("No barcode found — try again, hold camera steady.")
+        if img_file:
+            try:
+                from PIL import Image
+                from pyzbar.pyzbar import decode as zbar_decode
+                img = Image.open(img_file)
+                barcodes = zbar_decode(img)
+                if barcodes:
+                    code = barcodes[0].data.decode("utf-8")
+                    st.session_state["show_scanner"] = False
+                    st.session_state["bc_input"] = code
+                    st.rerun()
+                else:
+                    st.warning("No barcode found — try again in better light, closer to barcode.")
+            except Exception as e:
+                st.error(f"Scanner error: {e}. Please type the barcode manually.")
 
     # ── Results ───────────────────────────────────────────────────────────────
     q = st.session_state.get("bc_input", "").strip()
