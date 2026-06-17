@@ -1,0 +1,12 @@
+cityhyper.db
+*.db
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+*.xlsx
+*.xls
+*.csv
+export_parquet.py
+setup_database.py
+RUN APP.bat
+HBA_CityHyper.html
