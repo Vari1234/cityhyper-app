@@ -305,56 +305,10 @@ with _C:
 
     c1, c2, c3 = st.columns([2, 5, 1])
     with c1:
-        st.components.v1.html("""
-<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
-<div id="scan-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,0.92);z-index:99999;flex-direction:column;align-items:center;justify-content:center">
-  <div style="color:#fff;font-family:Arial;font-size:15px;margin-bottom:14px;font-weight:700">
-    📷 Point camera at barcode
-  </div>
-  <div id="interactive" style="width:300px;height:220px;border-radius:12px;overflow:hidden;position:relative;border:2px solid #F07820">
-    <div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#F07820;z-index:2;box-shadow:0 0 8px #F07820"></div>
-  </div>
-  <button onclick="stopScan()" style="margin-top:20px;background:#D32F2F;color:#fff;
-    border:none;border-radius:10px;padding:13px 36px;font-size:15px;font-weight:700;cursor:pointer">
-    ✕ Cancel
-  </button>
-</div>
-<button onclick="startScan()" style="
-  background:linear-gradient(135deg,#F07820,#E05010);color:#fff;font-weight:700;
-  font-size:14px;border:none;border-radius:10px;padding:12px 0;width:100%;
-  box-shadow:0 3px 10px rgba(240,120,32,0.4);cursor:pointer;font-family:Arial;letter-spacing:0.3px">
-  📷 Scan
-</button>
-<script>
-function startScan(){
-  document.getElementById('scan-overlay').style.display='flex';
-  Quagga.init({
-    inputStream:{type:"LiveStream",target:document.querySelector('#interactive'),
-      constraints:{facingMode:"environment",width:640,height:480}},
-    decoder:{readers:["ean_reader","ean_8_reader","code_128_reader","code_39_reader","upc_reader"]}
-  },function(err){
-    if(err){alert("Camera not available: "+err);stopScan();return;}
-    Quagga.start();
-  });
-  Quagga.onDetected(function(data){
-    var code=data.codeResult.code;
-    stopScan();
-    var inp=window.parent.document.querySelector('input[aria-label="Barcode"]');
-    if(!inp){inp=window.parent.document.querySelectorAll('input[type="text"]')[0];}
-    if(inp){
-      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(inp,code);
-      inp.dispatchEvent(new Event('input',{bubbles:true}));
-      inp.focus();
-    }
-  });
-}
-function stopScan(){
-  try{Quagga.stop();}catch(e){}
-  document.getElementById('scan-overlay').style.display='none';
-}
-</script>
-""", height=55)
+        st.markdown('<div class="scan-btn">', unsafe_allow_html=True)
+        if st.button("📷 Scan", use_container_width=True, key="btn_scan"):
+            st.session_state["show_scanner"] = True
+        st.markdown('</div>', unsafe_allow_html=True)
     with c2:
         st.markdown('<div class="go-btn">', unsafe_allow_html=True)
         st.button("🔍  Search", use_container_width=True, key="btn_go")
@@ -370,6 +324,50 @@ function stopScan(){
         if "bc_input" in st.session_state:
             del st.session_state["bc_input"]
         st.rerun()
+
+    # ── Barcode scanner (live camera in-page) ────────────────────────────────
+    if st.session_state.get("show_scanner"):
+        st.session_state["show_scanner"] = False
+        scanned = st.components.v1.html("""
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111;font-family:Arial;display:flex;flex-direction:column;align-items:center;padding:10px}
+#vp{width:100%;max-width:400px;height:280px;border-radius:12px;overflow:hidden;
+  position:relative;border:2px solid #F07820;background:#000}
+#vp video{width:100%;height:100%;object-fit:cover}
+#vp canvas{display:none}
+.scan-line{position:absolute;top:50%;left:4%;right:4%;height:3px;
+  background:#F07820;box-shadow:0 0 12px #F07820;z-index:5;border-radius:2px}
+.tip{color:#ddd;font-size:13px;text-align:center;margin:10px 0 8px}
+.detected{color:#4CAF50;font-size:16px;font-weight:700;text-align:center;
+  background:#1a2a1a;border-radius:8px;padding:10px;margin-top:8px;display:none}
+.cancel-btn{margin-top:10px;background:#D32F2F;color:#fff;border:none;
+  border-radius:10px;padding:11px 32px;font-size:14px;font-weight:700;cursor:pointer}
+</style>
+<div class="tip">📷 Point camera at barcode — auto-detects</div>
+<div id="vp"><div class="scan-line"></div></div>
+<div class="detected" id="det"></div>
+<button class="cancel-btn" onclick="stopMe()">✕ Cancel</button>
+<script>
+function stopMe(){try{Quagga.stop();}catch(e){}
+  window.parent.postMessage({type:'scan_cancel'},'*');}
+Quagga.init({
+  inputStream:{type:'LiveStream',target:document.querySelector('#vp'),
+    constraints:{facingMode:'environment'}},
+  decoder:{readers:['ean_reader','ean_8_reader','code_128_reader','code_39_reader','upc_reader']}
+},function(err){if(err){document.querySelector('.tip').textContent='❌ Camera error: '+err;return;}
+  Quagga.start();});
+Quagga.onDetected(function(r){
+  var code=r.codeResult.code;
+  try{Quagga.stop();}catch(e){}
+  var d=document.getElementById('det');
+  d.style.display='block';d.textContent='✅ '+code;
+  window.parent.postMessage({type:'scan_result',barcode:code},'*');
+  setTimeout(stopMe,1000);
+});
+</script>""", height=380)
+        st.info("Scanner active above — point your camera at a barcode.")
 
     # ── Results ───────────────────────────────────────────────────────────────
     q = st.session_state.get("bc_input", "").strip()
