@@ -252,7 +252,7 @@ def esc(v):
 
 
 # ── DB check ──────────────────────────────────────────────────────────────────
-if not os.path.exists(DB_PATH):
+if not _use_parquet() and not os.path.exists(DB_PATH):
     st.error("**Database not found.** Run `python setup_database.py` first.")
     st.stop()
 
