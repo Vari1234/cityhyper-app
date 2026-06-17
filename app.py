@@ -305,9 +305,56 @@ with _C:
 
     c1, c2, c3 = st.columns([2, 5, 1])
     with c1:
-        st.markdown('<div class="scan-btn">', unsafe_allow_html=True)
-        st.button("📷 Scan", use_container_width=True, key="btn_scan")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.components.v1.html("""
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+<div id="scan-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.92);z-index:99999;flex-direction:column;align-items:center;justify-content:center">
+  <div style="color:#fff;font-family:Arial;font-size:15px;margin-bottom:14px;font-weight:700">
+    📷 Point camera at barcode
+  </div>
+  <div id="interactive" style="width:300px;height:220px;border-radius:12px;overflow:hidden;position:relative;border:2px solid #F07820">
+    <div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#F07820;z-index:2;box-shadow:0 0 8px #F07820"></div>
+  </div>
+  <button onclick="stopScan()" style="margin-top:20px;background:#D32F2F;color:#fff;
+    border:none;border-radius:10px;padding:13px 36px;font-size:15px;font-weight:700;cursor:pointer">
+    ✕ Cancel
+  </button>
+</div>
+<button onclick="startScan()" style="
+  background:linear-gradient(135deg,#F07820,#E05010);color:#fff;font-weight:700;
+  font-size:14px;border:none;border-radius:10px;padding:12px 0;width:100%;
+  box-shadow:0 3px 10px rgba(240,120,32,0.4);cursor:pointer;font-family:Arial;letter-spacing:0.3px">
+  📷 Scan
+</button>
+<script>
+function startScan(){
+  document.getElementById('scan-overlay').style.display='flex';
+  Quagga.init({
+    inputStream:{type:"LiveStream",target:document.querySelector('#interactive'),
+      constraints:{facingMode:"environment",width:640,height:480}},
+    decoder:{readers:["ean_reader","ean_8_reader","code_128_reader","code_39_reader","upc_reader"]}
+  },function(err){
+    if(err){alert("Camera not available: "+err);stopScan();return;}
+    Quagga.start();
+  });
+  Quagga.onDetected(function(data){
+    var code=data.codeResult.code;
+    stopScan();
+    var inp=window.parent.document.querySelector('input[aria-label="Barcode"]');
+    if(!inp){inp=window.parent.document.querySelectorAll('input[type="text"]')[0];}
+    if(inp){
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set.call(inp,code);
+      inp.dispatchEvent(new Event('input',{bubbles:true}));
+      inp.focus();
+    }
+  });
+}
+function stopScan(){
+  try{Quagga.stop();}catch(e){}
+  document.getElementById('scan-overlay').style.display='none';
+}
+</script>
+""", height=55)
     with c2:
         st.markdown('<div class="go-btn">', unsafe_allow_html=True)
         st.button("🔍  Search", use_container_width=True, key="btn_go")
