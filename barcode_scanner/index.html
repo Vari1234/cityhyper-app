@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://unpkg.com/streamlit-component-lib/dist/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#111;display:flex;flex-direction:column;
+  align-items:center;padding:10px;min-height:100vh}
+#vp{width:100%;max-width:420px;height:260px;border-radius:12px;overflow:hidden;
+  position:relative;border:2px solid #F07820;background:#000}
+#vp video{width:100%;height:100%;object-fit:cover}
+#vp canvas{display:none}
+.line{position:absolute;top:50%;left:4%;right:4%;height:3px;
+  background:#F07820;box-shadow:0 0 12px #F07820;z-index:5;border-radius:2px;
+  animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.tip{color:#ccc;font-size:13px;text-align:center;margin:10px 0 8px;font-weight:600}
+#det{display:none;text-align:center;background:#1a2a1a;border-radius:10px;
+  padding:16px;margin-top:10px;width:100%;max-width:420px}
+.cancel-btn{margin-top:10px;background:#555;color:#fff;border:none;
+  border-radius:10px;padding:11px 32px;font-size:14px;font-weight:700;
+  cursor:pointer;width:100%;max-width:420px}
+.err{color:#ff6b6b;font-size:12px;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="tip">📷 Point camera at barcode</div>
+<div id="vp"><div class="line"></div></div>
+<div id="det"></div>
+<button class="cancel-btn" onclick="sendCancel()">✕ Cancel</button>
+<div class="err" id="err"></div>
+<script>
+Streamlit.setComponentReady();
+
+var detected = false;
+
+function sendCancel() {
+  Streamlit.setComponentValue(null);
+}
+
+Quagga.init({
+  inputStream: {
+    type: "LiveStream",
+    target: document.querySelector('#vp'),
+    constraints: { facingMode: "environment" }
+  },
+  decoder: {
+    readers: ["ean_reader","ean_8_reader","code_128_reader","code_39_reader","upc_reader"]
+  }
+}, function(err) {
+  if (err) {
+    document.getElementById('err').textContent = "Camera error: " + err;
+    return;
+  }
+  Quagga.start();
+});
+
+Quagga.onDetected(function(r) {
+  if (detected) return;
+  detected = true;
+  var code = r.codeResult.code;
+  try { Quagga.stop(); } catch(e) {}
+  document.getElementById('vp').style.display = 'none';
+  document.querySelector('.tip').textContent = 'Detected!';
+  var d = document.getElementById('det');
+  d.innerHTML = '<div style="color:#4CAF50;font-size:22px;font-weight:800">✅ ' + code + '</div>'
+    + '<div style="color:#aaa;font-size:12px;margin-top:4px">Sending to app…</div>';
+  d.style.display = 'block';
+  setTimeout(function() {
+    Streamlit.setComponentValue(code);
+  }, 500);
+});
+</script>
+</body>
+</html>

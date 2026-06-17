@@ -3,7 +3,11 @@ CityHyper Hypermarket — Product Lookup App
 Run: streamlit run app.py
 """
 import streamlit as st
+import streamlit.components.v1 as components
 import sqlite3, os, pandas as pd
+
+_SCANNER_DIR = os.path.join(os.path.dirname(__file__), "barcode_scanner")
+_barcode_scanner = components.declare_component("barcode_scanner", path=_SCANNER_DIR)
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 DB_PATH  = os.path.join(os.path.dirname(__file__), "cityhyper.db")  # local fallback
@@ -259,11 +263,7 @@ if not _use_parquet() and not os.path.exists(DB_PATH):
     st.error("**Database not found.** Run `python setup_database.py` first.")
     st.stop()
 
-# ── Pre-fill barcode from scanner OR handle clear — must happen before widgets ─
-_qbc = st.query_params.get("bc", "")
-if _qbc:
-    st.session_state["bc_input"] = _qbc
-    st.query_params.clear()
+# ── Handle clear request (must happen before widgets render) ──────────────────
 if st.session_state.pop("_clear_requested", False):
     st.session_state["bc_input"] = ""
 
@@ -332,58 +332,13 @@ with _C:
         st.session_state["_clear_requested"] = True
         st.rerun()
 
-    # ── Barcode scanner (live camera in-page) ────────────────────────────────
+    # ── Barcode scanner (proper bidirectional component) ─────────────────────
     if st.session_state.get("show_scanner"):
-        st.session_state["show_scanner"] = False
-        scanned = st.components.v1.html("""
-<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#111;font-family:Arial;display:flex;flex-direction:column;align-items:center;padding:10px}
-#vp{width:100%;max-width:400px;height:280px;border-radius:12px;overflow:hidden;
-  position:relative;border:2px solid #F07820;background:#000}
-#vp video{width:100%;height:100%;object-fit:cover}
-#vp canvas{display:none}
-.scan-line{position:absolute;top:50%;left:4%;right:4%;height:3px;
-  background:#F07820;box-shadow:0 0 12px #F07820;z-index:5;border-radius:2px}
-.tip{color:#ddd;font-size:13px;text-align:center;margin:10px 0 8px}
-.detected{color:#4CAF50;font-size:16px;font-weight:700;text-align:center;
-  background:#1a2a1a;border-radius:8px;padding:10px;margin-top:8px;display:none}
-.cancel-btn{margin-top:10px;background:#D32F2F;color:#fff;border:none;
-  border-radius:10px;padding:11px 32px;font-size:14px;font-weight:700;cursor:pointer}
-</style>
-<div class="tip">📷 Point camera at barcode — auto-detects</div>
-<div id="vp"><div class="scan-line"></div></div>
-<div class="detected" id="det"></div>
-<button class="cancel-btn" onclick="stopMe()">✕ Cancel</button>
-<script>
-function stopMe(){try{Quagga.stop();}catch(e){}
-  window.parent.postMessage({type:'scan_cancel'},'*');}
-Quagga.init({
-  inputStream:{type:'LiveStream',target:document.querySelector('#vp'),
-    constraints:{facingMode:'environment'}},
-  decoder:{readers:['ean_reader','ean_8_reader','code_128_reader','code_39_reader','upc_reader']}
-},function(err){if(err){document.querySelector('.tip').textContent='❌ Camera error: '+err;return;}
-  Quagga.start();});
-var _detected=false;
-Quagga.onDetected(function(r){
-  if(_detected)return;
-  _detected=true;
-  var code=r.codeResult.code;
-  try{Quagga.stop();}catch(e){}
-  document.getElementById('vp').style.display='none';
-  document.querySelector('.tip').style.display='none';
-  var d=document.getElementById('det');
-  d.innerHTML='<div style="font-size:13px;color:#aaa;margin-bottom:6px">Detected:</div>'
-    +'<div style="font-size:22px;font-weight:800;color:#4CAF50;margin-bottom:8px">✅ '+code+'</div>'
-    +'<div style="font-size:12px;color:#aaa">Loading results…</div>';
-  d.style.display='block';
-  setTimeout(function(){
-    window.top.location.href = window.top.location.pathname + '?bc=' + encodeURIComponent(code);
-  }, 600);
-});
-</script>""", height=420)
-        st.info("Scanner active above — point your camera at a barcode.")
+        scanned = _barcode_scanner(key="scanner_comp")
+        if scanned is not None:
+            st.session_state["show_scanner"] = False
+            st.session_state["bc_input"] = scanned
+            st.rerun()
 
     # ── Results ───────────────────────────────────────────────────────────────
     q = st.session_state.get("bc_input", "").strip()
