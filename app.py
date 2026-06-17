@@ -311,7 +311,7 @@ with _C:
     with c1:
         st.markdown('<div class="scan-btn">', unsafe_allow_html=True)
         if st.button("📷 Scan", use_container_width=True, key="btn_scan"):
-            st.session_state["show_scanner"] = True
+            st.session_state["show_scanner"] = not st.session_state.get("show_scanner", False)
         st.markdown('</div>', unsafe_allow_html=True)
     with c2:
         st.markdown('<div class="go-btn">', unsafe_allow_html=True)
@@ -328,72 +328,21 @@ with _C:
         st.session_state["_clear_requested"] = True
         st.rerun()
 
-    # ── Barcode scanner via st.components.v1.html ────────────────────────────
+    # ── Barcode scanner via camera input + pyzbar ────────────────────────────
     if st.session_state.get("show_scanner"):
-        scan_id = st.session_state.get("scan_count", 0)
-        result = st.components.v1.html(f"""
-<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
-<style>
-*{{margin:0;padding:0;box-sizing:border-box}}
-body{{background:#111;font-family:Arial;display:flex;flex-direction:column;
-  align-items:center;justify-content:flex-start;padding:10px;height:380px}}
-#vp{{width:100%;height:240px;border-radius:10px;overflow:hidden;
-  position:relative;border:2px solid #F07820;background:#000}}
-#vp video{{width:100%;height:100%;object-fit:cover}}
-#vp canvas{{display:none}}
-.line{{position:absolute;top:50%;left:4%;right:4%;height:3px;
-  background:#F07820;box-shadow:0 0 10px #F07820;z-index:5}}
-.tip{{color:#ccc;font-size:12px;margin:8px 0 6px;text-align:center}}
-#det{{display:none;color:#4CAF50;font-size:18px;font-weight:800;
-  text-align:center;margin:10px 0;padding:10px;background:#1a2a1a;
-  border-radius:8px;width:100%}}
-.cancel{{background:#555;color:#fff;border:none;border-radius:8px;
-  padding:10px;width:100%;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px}}
-</style></head><body>
-<div class="tip">📷 Point camera at barcode</div>
-<div id="vp"><div class="line"></div></div>
-<div id="det"></div>
-<button class="cancel" onclick="doCancel()">✕ Cancel</button>
-<input type="hidden" id="result" value="">
-<script>
-var done=false;
-function sendVal(v){{
-  document.getElementById('result').value=v;
-  // Post to Streamlit parent
-  window.parent.postMessage({{isStreamlitMessage:true,type:'streamlit:setComponentValue',value:v}},  '*');
-}}
-function doCancel(){{
-  try{{Quagga.stop();}}catch(e){{}}
-  sendVal('__cancel__');
-}}
-Quagga.init({{
-  inputStream:{{type:'LiveStream',target:document.querySelector('#vp'),
-    constraints:{{facingMode:'environment'}}}},
-  decoder:{{readers:['ean_reader','ean_8_reader','code_128_reader','code_39_reader','upc_reader']}}
-}},function(err){{
-  if(err){{document.querySelector('.tip').textContent='❌ '+err;return;}}
-  Quagga.start();
-}});
-Quagga.onDetected(function(r){{
-  if(done)return; done=true;
-  var code=r.codeResult.code;
-  try{{Quagga.stop();}}catch(e){{}}
-  document.getElementById('vp').style.display='none';
-  var d=document.getElementById('det');
-  d.textContent='✅ '+code; d.style.display='block';
-  document.querySelector('.tip').textContent='Detected! Loading…';
-  setTimeout(function(){{sendVal(code);}},600);
-}});
-</script></body></html>
-""", height=390)
-        if result is not None and result != "":
-            st.session_state["show_scanner"] = False
-            st.session_state["scan_count"] = scan_id + 1
-            if result != "__cancel__":
-                st.session_state["bc_input"] = result
-            st.rerun()
+        from PIL import Image
+        from pyzbar.pyzbar import decode as zbar_decode
+        img_file = st.camera_input("Point camera at barcode and take photo", key="cam_input")
+        if img_file:
+            img = Image.open(img_file)
+            barcodes = zbar_decode(img)
+            if barcodes:
+                code = barcodes[0].data.decode("utf-8")
+                st.session_state["show_scanner"] = False
+                st.session_state["bc_input"] = code
+                st.rerun()
+            else:
+                st.warning("No barcode found — try again, hold camera steady.")
 
     # ── Results ───────────────────────────────────────────────────────────────
     q = st.session_state.get("bc_input", "").strip()
