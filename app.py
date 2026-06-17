@@ -261,7 +261,7 @@ if not _use_parquet() and not os.path.exists(DB_PATH):
 
 # ── Pre-fill barcode from scanner query param ─────────────────────────────────
 _qbc = st.query_params.get("bc", "")
-if _qbc and st.session_state.get("bc_input","") != _qbc:
+if _qbc:
     st.session_state["bc_input"] = _qbc
     st.query_params.clear()
 
@@ -307,8 +307,7 @@ with _C:
 
     st.markdown('<span class="lbl-block" style="margin-top:10px">Barcode</span>', unsafe_allow_html=True)
     query = st.text_input("Barcode", placeholder="Scan or type barcode…",
-                          label_visibility="collapsed", key="bc_input",
-                          value=st.session_state.get("bc_input",""))
+                          label_visibility="collapsed", key="bc_input")
 
     c1, c2, c3 = st.columns([2, 5, 1])
     with c1:
@@ -328,8 +327,7 @@ with _C:
     st.markdown('</div>', unsafe_allow_html=True)  # .bar
 
     if clear:
-        if "bc_input" in st.session_state:
-            del st.session_state["bc_input"]
+        st.session_state["bc_input"] = ""
         st.rerun()
 
     # ── Barcode scanner (live camera in-page) ────────────────────────────────
