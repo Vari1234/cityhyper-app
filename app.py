@@ -21,9 +21,11 @@ html,body,.stApp{font-family:'Inter',Arial,sans-serif!important;background:#EEF4
 .block-container{padding:0!important;max-width:100%!important}
 section[data-testid="stMain"]>div{padding:0!important}
 div[data-testid="stVerticalBlock"]{gap:0!important}
-div[data-testid="stColumn"]>div{padding-top:0!important}
-div[data-testid="stColumn"] div[data-testid="stVerticalBlock"]{padding-top:0!important}
+div[data-testid="stColumn"]>div{padding-top:0!important;padding-bottom:0!important}
+div[data-testid="stColumn"] div[data-testid="stVerticalBlock"]{padding-top:0!important;gap:0!important}
 div[data-testid="element-container"]{margin-top:0!important;padding-top:0!important}
+div[data-testid="stVerticalBlock"]>div:first-child{padding-top:0!important;margin-top:0!important}
+.stSelectbox,[data-testid="stSelectbox"]{margin-top:0!important;padding-top:0!important}
 #MainMenu,footer{display:none!important}
 
 /* ── Shell ── */
@@ -52,7 +54,7 @@ div[data-testid="element-container"]{margin-top:0!important;padding-top:0!import
   letter-spacing:1px;font-weight:600}
 
 /* ── Wrap ── */
-.wrap{padding:14px 0 60px}
+.wrap{padding:12px 0 60px}
 
 /* ── Search card ── */
 .bar{background:#fff;border-radius:14px;padding:16px 16px 18px;
@@ -290,8 +292,7 @@ with _C:
     store_names = [name for _, name in stores]
     store_locs  = [loc  for loc,  _ in stores]
 
-    st.markdown('<div class="ch-shell"><div class="wrap">', unsafe_allow_html=True)
-    st.markdown('<div class="bar">', unsafe_allow_html=True)
+    st.markdown('<div class="ch-shell"><div class="wrap"><div class="bar">', unsafe_allow_html=True)
 
     st.markdown('<span class="lbl-block">Store</span>', unsafe_allow_html=True)
     store_sel = st.selectbox("Store", options=store_names, index=0,
@@ -317,7 +318,7 @@ with _C:
         clear = st.button("✕", use_container_width=True, key="btn_clr")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)  # .bar
+    st.markdown('</div>', unsafe_allow_html=True)  # .bar (no extra close needed — bar is inside wrap)
 
     if clear:
         st.session_state["bc_val"] = ""
