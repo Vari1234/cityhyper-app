@@ -320,7 +320,8 @@ with _C:
     st.markdown('</div>', unsafe_allow_html=True)  # .bar
 
     if clear:
-        st.session_state.bc_input = ""
+        if "bc_input" in st.session_state:
+            del st.session_state["bc_input"]
         st.rerun()
 
     # ── Results ───────────────────────────────────────────────────────────────
