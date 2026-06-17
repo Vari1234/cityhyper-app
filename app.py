@@ -10,146 +10,147 @@ DB_PATH  = os.path.join(os.path.dirname(__file__), "cityhyper.db")  # local fall
 
 st.set_page_config(page_title="CityHyper Hypermarket", page_icon="🏬", layout="wide")
 
-# ── CSS — exact match to HBA_CityHyper.html ──────────────────────────────────
+# ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* ── Global reset ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-html,body,.stApp{font-family:Arial,sans-serif!important;background:#f5f9fc!important}
-[data-testid="stAppViewContainer"]{background:#f5f9fc!important}
+html,body,.stApp{font-family:'Inter',Arial,sans-serif!important;background:#EEF4F8!important}
+[data-testid="stAppViewContainer"]{background:#EEF4F8!important}
 [data-testid="stHeader"],[data-testid="stToolbar"]{display:none!important}
 .block-container{padding:0!important;max-width:100%!important}
 section[data-testid="stMain"]>div{padding:0!important}
 div[data-testid="stVerticalBlock"]{gap:0!important}
-/* Remove all top padding from column inner blocks */
 div[data-testid="stColumn"]>div{padding-top:0!important}
 div[data-testid="stColumn"] div[data-testid="stVerticalBlock"]{padding-top:0!important}
+div[data-testid="element-container"]{margin-top:0!important;padding-top:0!important}
 #MainMenu,footer{display:none!important}
 
-/* ── Outer centering shell ── */
-.ch-shell{max-width:680px;margin:0 auto}
+/* ── Shell ── */
+.ch-shell{max-width:700px;margin:0 auto}
 
-/* ── Top bar ── */
-.ch-h1{background:#0F5A7A;color:#fff;padding:14px 18px;font-size:17px;
-       font-weight:700;font-family:Arial,sans-serif;margin:0;
-       border-radius:0 0 0 0}
-.ch-h1 em{color:#F5C500;font-style:normal}
-
-/* ── Tags bar ── */
-.tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center;
-      padding:8px 16px 6px;background:#f5f9fc}
-.tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:5px;
-     background:#e8f4fb;color:#0F5A7A;border:1px solid #C8E2EF}
+/* ── Header ── */
+.ch-header{background:linear-gradient(135deg,#0A3D52 0%,#0F5A7A 50%,#1A7AA8 100%);
+  padding:0;overflow:hidden;border-radius:0 0 16px 16px;
+  box-shadow:0 4px 20px rgba(15,90,122,0.35)}
+.ch-header-inner{padding:20px 22px 16px}
+.ch-logo-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.ch-logo-icon{width:40px;height:40px;background:rgba(255,255,255,0.15);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:22px;backdrop-filter:blur(4px)}
+.ch-title{font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.3px}
+.ch-title span{color:#F5C500}
+.ch-subtitle{font-size:11px;color:rgba(255,255,255,0.6);font-weight:500;
+  text-transform:uppercase;letter-spacing:1.5px}
+.ch-header-bar{height:4px;background:linear-gradient(90deg,#F5C500,#F07820,#E91E63)}
+.ch-stats{display:flex;gap:0;border-top:1px solid rgba(255,255,255,0.1)}
+.ch-stat{flex:1;padding:10px 16px;text-align:center;
+  border-right:1px solid rgba(255,255,255,0.1)}
+.ch-stat:last-child{border-right:none}
+.ch-stat-n{font-size:16px;font-weight:800;color:#F5C500}
+.ch-stat-l{font-size:9px;color:rgba(255,255,255,0.55);text-transform:uppercase;
+  letter-spacing:1px;font-weight:600}
 
 /* ── Wrap ── */
-.wrap{padding:10px 0 60px}
+.wrap{padding:14px 0 60px}
 
 /* ── Search card ── */
-.bar{background:#fff;border:1px solid #C8E2EF;border-radius:10px;
-     padding:10px 14px 14px;margin-bottom:10px}
-.lbl-block{display:block;font-size:10px;font-weight:800;text-transform:uppercase;
-           letter-spacing:.5px;color:#0F5A7A;margin-bottom:4px;
-           font-family:Arial,sans-serif}
-
-/* ── Remove top padding from Streamlit main & columns ── */
-section[data-testid="stMain"]>div{padding-top:0!important}
-div[data-testid="stColumn"]>div{padding-top:0!important;margin-top:0!important}
-div[data-testid="stColumn"] div[data-testid="stVerticalBlock"]{gap:0!important;padding-top:0!important}
-div[data-testid="element-container"]{margin-top:0!important;padding-top:0!important}
+.bar{background:#fff;border-radius:14px;padding:16px 16px 18px;
+  margin-bottom:12px;box-shadow:0 2px 16px rgba(15,90,122,0.1);
+  border:1px solid rgba(15,90,122,0.08)}
+.lbl-block{display:block;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:#0F5A7A;margin-bottom:6px}
 
 /* ── Hide widget labels ── */
 div[data-testid="stSelectbox"]>label,
 div[data-testid="stTextInput"]>label{display:none!important}
 
-/* ── Style text input only (leave selectbox default so value shows) ── */
+/* ── Text input ── */
 div[data-testid="stTextInput"] input{
-  border:1.5px solid #C8E2EF!important;
-  border-radius:7px!important;padding:10px 12px!important;
-  font-size:15px!important;background:#fff!important;
-  font-family:Arial,sans-serif!important}
-div[data-testid="stTextInput"] input:focus{border-color:#2196C4!important}
+  border:2px solid #E0EDF5!important;border-radius:10px!important;
+  padding:12px 14px!important;font-size:15px!important;background:#F8FBFD!important;
+  font-family:'Inter',Arial,sans-serif!important;color:#1a1a2e!important;
+  transition:border-color .2s}
+div[data-testid="stTextInput"] input:focus{border-color:#2196C4!important;background:#fff!important}
 
-/* ── Selectbox: style only the outer wrapper border ── */
+/* ── Selectbox ── */
 div[data-testid="stSelectbox"] div[data-baseweb="select"] div[class]{
-  border-color:#C8E2EF!important;border-radius:7px!important;
-  font-size:15px!important;font-family:Arial,sans-serif!important}
+  border-color:#E0EDF5!important;border-radius:10px!important;
+  font-size:15px!important;background:#F8FBFD!important}
 
 /* ── Buttons ── */
 div[data-testid="stHorizontalBlock"]{gap:8px!important}
 div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"]{padding-top:0!important}
-.scan-btn button{background:#F07820!important;color:#fff!important;
-  font-weight:800!important;font-size:15px!important;border:none!important;
-  border-radius:8px!important;padding:11px 0!important;
-  font-family:Arial,sans-serif!important;width:100%}
-.scan-btn button:hover{background:#c75f10!important}
-.go-btn button{background:#2196C4!important;color:#fff!important;
-  font-weight:800!important;font-size:15px!important;border:none!important;
-  border-radius:8px!important;padding:11px 0!important;
-  font-family:Arial,sans-serif!important;width:100%}
-.go-btn button:hover{background:#0F5A7A!important}
-.clr-btn button{background:#eee!important;color:#555!important;
-  font-weight:800!important;font-size:15px!important;
-  border:none!important;border-radius:8px!important;padding:11px 0!important;
-  font-family:Arial,sans-serif!important;width:100%}
-.clr-btn button:hover{background:#ddd!important}
+.scan-btn button{background:linear-gradient(135deg,#F07820,#E05010)!important;
+  color:#fff!important;font-weight:700!important;font-size:14px!important;
+  border:none!important;border-radius:10px!important;padding:12px 0!important;
+  font-family:'Inter',Arial,sans-serif!important;width:100%;
+  box-shadow:0 3px 10px rgba(240,120,32,0.4)!important}
+.go-btn button{background:linear-gradient(135deg,#2196C4,#0F5A7A)!important;
+  color:#fff!important;font-weight:700!important;font-size:14px!important;
+  border:none!important;border-radius:10px!important;padding:12px 0!important;
+  font-family:'Inter',Arial,sans-serif!important;width:100%;
+  box-shadow:0 3px 10px rgba(33,150,196,0.4)!important}
+.clr-btn button{background:#F0F4F8!important;color:#666!important;
+  font-weight:600!important;font-size:14px!important;
+  border:none!important;border-radius:10px!important;padding:12px 0!important;
+  font-family:'Inter',Arial,sans-serif!important;width:100%}
 
 /* ── Result card ── */
-#res{background:#fff;border:1px solid #C8E2EF;border-radius:10px;
-     overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);margin-bottom:10px}
-.rhead{background:linear-gradient(135deg,#0F5A7A,#2196C4);color:#fff;
-       padding:16px 18px}
-.rhead-bar{height:3px;background:linear-gradient(90deg,#F5C500,#F07820);
-           margin:12px -18px 0}
-.rtitle{font-size:17px;font-weight:800;line-height:1.3;font-family:Arial,sans-serif}
-.rcode{font-size:11px;opacity:.55;margin-top:3px;font-family:monospace}
-.sec{padding:12px 18px;border-bottom:1px solid #eef5fb;font-family:Arial,sans-serif}
+#res{background:#fff;border-radius:14px;overflow:hidden;
+  box-shadow:0 4px 24px rgba(15,90,122,0.12);margin-bottom:12px;
+  border:1px solid rgba(15,90,122,0.08)}
+.rhead{background:linear-gradient(135deg,#0A3D52,#0F5A7A,#1A7AA8);color:#fff;padding:18px 20px}
+.rhead-bar{height:4px;background:linear-gradient(90deg,#F5C500,#F07820,#E91E63);margin:14px -20px 0}
+.rtitle{font-size:18px;font-weight:800;line-height:1.3;letter-spacing:-0.2px}
+.rcode{font-size:11px;opacity:.5;margin-top:4px;font-family:monospace}
+.sec{padding:14px 20px;border-bottom:1px solid #F0F5FA}
 .sec:last-child{border-bottom:none}
-.sec.yel{border-left:4px solid #F5C500}
-.sec.blu{border-left:4px solid #2196C4}
-.sec.org{border-left:4px solid #F07820}
-.sec.grey{border-left:4px solid #90A4AE}
-.stitle{font-size:10px;font-weight:800;text-transform:uppercase;
-        letter-spacing:.8px;color:#2196C4;margin-bottom:9px;
-        font-family:Arial,sans-serif}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
-.kv{display:flex;flex-direction:column;gap:2px}
-.k{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;
-   letter-spacing:.3px;font-family:Arial,sans-serif}
-.v{font-size:14px;font-weight:600;color:#222;font-family:Arial,sans-serif}
-.big{font-size:22px;font-weight:900;color:#0F5A7A;font-family:Arial,sans-serif}
-.med{font-size:17px;font-weight:700;color:#333;font-family:Arial,sans-serif}
-.blue{font-size:19px;font-weight:900;color:#2196C4;font-family:Arial,sans-serif}
-.oran{font-size:16px;font-weight:700;color:#F07820;font-family:Arial,sans-serif}
-.green{font-size:16px;font-weight:700;color:#2e7d32;font-family:Arial,sans-serif}
-.red-v{font-size:16px;font-weight:700;color:#c62828;font-family:Arial,sans-serif}
-.grey-v{font-size:15px;font-weight:600;color:#888;font-family:Arial,sans-serif}
-.badge{display:inline-block;font-size:10px;font-weight:700;
-       padding:2px 6px;border-radius:3px;margin-left:4px}
-.badge-up{background:#e8f5e9;color:#1b5e20}
-.badge-dn{background:#fce4ec;color:#b71c1c}
+.sec.yel{border-left:5px solid #F5C500;background:linear-gradient(90deg,#FFFDF0,#fff)}
+.sec.blu{border-left:5px solid #2196C4;background:linear-gradient(90deg,#F0F8FF,#fff)}
+.sec.org{border-left:5px solid #F07820;background:linear-gradient(90deg,#FFF8F0,#fff)}
+.sec.grey{border-left:5px solid #90A4AE;background:linear-gradient(90deg,#F5F8FA,#fff)}
+.stitle{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;
+  color:#2196C4;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.stitle::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#E0EDF5,transparent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kv{display:flex;flex-direction:column;gap:3px;padding:8px 10px;
+  background:#F8FBFD;border-radius:8px}
+.k{font-size:9px;color:#8899AA;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.v{font-size:14px;font-weight:600;color:#1a2a3a}
+.big{font-size:24px;font-weight:900;color:#0F5A7A;letter-spacing:-0.5px}
+.med{font-size:18px;font-weight:700;color:#1a2a3a}
+.blue{font-size:20px;font-weight:900;color:#2196C4}
+.oran{font-size:17px;font-weight:700;color:#F07820}
+.green{font-size:17px;font-weight:700;color:#1B8A3C}
+.red-v{font-size:17px;font-weight:700;color:#D32F2F}
+.grey-v{font-size:15px;font-weight:600;color:#8899AA}
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;
+  border-radius:20px;margin-left:4px;vertical-align:middle}
+.badge-up{background:#E8F5E9;color:#1B5E20}
+.badge-dn{background:#FCE4EC;color:#B71C1C}
 
 /* ── Not found ── */
-.nf{text-align:center;padding:28px 16px;background:#fff;border:1px solid #C8E2EF;
-    border-radius:10px;margin-bottom:10px}
-.nf p{font-size:16px;font-weight:700;color:#c62828;margin-bottom:4px;
-      font-family:Arial,sans-serif}
-.nf small{font-size:12px;color:#888;font-family:Arial,sans-serif}
+.nf{text-align:center;padding:32px 20px;background:#fff;border-radius:14px;
+  margin-bottom:12px;box-shadow:0 2px 16px rgba(15,90,122,0.08)}
+.nf-icon{font-size:2.5rem;margin-bottom:10px}
+.nf p{font-size:16px;font-weight:700;color:#D32F2F;margin-bottom:4px}
+.nf small{font-size:12px;color:#8899AA}
 
 /* ── Empty state ── */
-.empty{text-align:center;padding:40px 16px;color:#aaa;font-family:Arial,sans-serif}
-.empty-icon{font-size:2.8rem;margin-bottom:10px}
-.empty-title{font-size:15px;font-weight:700;color:#0F5A7A;margin-bottom:6px}
-.empty-sub{font-size:12px;color:#888}
+.empty{text-align:center;padding:48px 20px;color:#aaa}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+.empty-title{font-size:16px;font-weight:700;color:#0F5A7A;margin-bottom:6px}
+.empty-sub{font-size:12px;color:#8899AA}
 
 /* ── Footer ── */
-.ch-footer{text-align:center;padding:14px;color:#aaa;font-size:11px;
-           border-top:1px solid #e8f0f5;margin-top:16px;
-           font-family:Arial,sans-serif}
+.ch-footer{text-align:center;padding:16px;color:#AABBCC;font-size:11px;
+  border-top:1px solid #E8F0F5;margin-top:16px;letter-spacing:.5px}
 
 /* ── Mobile ── */
 @media(max-width:480px){
-  .big{font-size:18px}.blue{font-size:16px}
-  .wrap{padding:10px 10px 60px}
+  .ch-title{font-size:17px}.big{font-size:20px}.blue{font-size:17px}
+  .wrap{padding:12px 10px 60px}.grid{grid-template-columns:1fr 1fr}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -265,10 +266,22 @@ _L, _C, _R = st.columns([1, 4, 1])
 with _C:
     st.markdown(f"""
     <div class="ch-shell">
-      <div class="ch-h1">CityHyper – <em>Hypermarket</em></div>
-      <div class="tags">
-        <span class="tag">✅ {n_prod:,} products</span>
-        <span class="tag">✅ {n_mon} months · {n_stores} stores</span>
+      <div class="ch-header">
+        <div class="ch-header-inner">
+          <div class="ch-logo-row">
+            <div class="ch-logo-icon">🏬</div>
+            <div>
+              <div class="ch-title">CityHyper <span>Hypermarket</span></div>
+              <div class="ch-subtitle">Product Intelligence System</div>
+            </div>
+          </div>
+        </div>
+        <div class="ch-header-bar"></div>
+        <div class="ch-stats">
+          <div class="ch-stat"><div class="ch-stat-n">{n_prod:,}</div><div class="ch-stat-l">Products</div></div>
+          <div class="ch-stat"><div class="ch-stat-n">{n_mon}</div><div class="ch-stat-l">Months</div></div>
+          <div class="ch-stat"><div class="ch-stat-n">{n_stores}</div><div class="ch-stat-l">Stores</div></div>
+        </div>
       </div>
     </div>
     """, unsafe_allow_html=True)
