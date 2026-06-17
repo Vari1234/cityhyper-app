@@ -363,17 +363,24 @@ Quagga.init({
   decoder:{readers:['ean_reader','ean_8_reader','code_128_reader','code_39_reader','upc_reader']}
 },function(err){if(err){document.querySelector('.tip').textContent='❌ Camera error: '+err;return;}
   Quagga.start();});
+var _detected=false;
 Quagga.onDetected(function(r){
+  if(_detected)return;
+  _detected=true;
   var code=r.codeResult.code;
   try{Quagga.stop();}catch(e){}
+  document.getElementById('vp').style.display='none';
+  document.querySelector('.tip').style.display='none';
   var d=document.getElementById('det');
-  d.style.display='block';d.textContent='✅ '+code;
-  setTimeout(function(){
-    var url=window.parent.location.href.split('?')[0]+'?bc='+encodeURIComponent(code);
-    window.parent.location.href=url;
-  },800);
+  d.innerHTML='<div style="font-size:13px;color:#aaa;margin-bottom:6px">Barcode detected:</div>'
+    +'<div style="font-size:20px;font-weight:800;color:#4CAF50;margin-bottom:14px">'+code+'</div>'
+    +'<a href="?bc='+encodeURIComponent(code)+'" target="_top" style="display:block;background:#2196C4;'
+    +'color:#fff;text-decoration:none;border-radius:10px;padding:13px 24px;font-size:15px;'
+    +'font-weight:700;text-align:center">🔍 Search this barcode</a>'
+    +'<div style="margin-top:10px;font-size:12px;color:#888;text-align:center">or tap Cancel to rescan</div>';
+  d.style.display='block';
 });
-</script>""", height=380)
+</script>""", height=420)
         st.info("Scanner active above — point your camera at a barcode.")
 
     # ── Results ───────────────────────────────────────────────────────────────
