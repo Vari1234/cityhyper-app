@@ -259,11 +259,13 @@ if not _use_parquet() and not os.path.exists(DB_PATH):
     st.error("**Database not found.** Run `python setup_database.py` first.")
     st.stop()
 
-# ── Pre-fill barcode from scanner query param ─────────────────────────────────
+# ── Pre-fill barcode from scanner OR handle clear — must happen before widgets ─
 _qbc = st.query_params.get("bc", "")
 if _qbc:
     st.session_state["bc_input"] = _qbc
     st.query_params.clear()
+if st.session_state.pop("_clear_requested", False):
+    st.session_state["bc_input"] = ""
 
 # ── Header ────────────────────────────────────────────────────────────────────
 n_prod, n_mon, n_stores = get_stats()
@@ -327,7 +329,7 @@ with _C:
     st.markdown('</div>', unsafe_allow_html=True)  # .bar
 
     if clear:
-        st.session_state["bc_input"] = ""
+        st.session_state["_clear_requested"] = True
         st.rerun()
 
     # ── Barcode scanner (live camera in-page) ────────────────────────────────
@@ -372,13 +374,13 @@ Quagga.onDetected(function(r){
   document.getElementById('vp').style.display='none';
   document.querySelector('.tip').style.display='none';
   var d=document.getElementById('det');
-  d.innerHTML='<div style="font-size:13px;color:#aaa;margin-bottom:6px">Barcode detected:</div>'
-    +'<div style="font-size:20px;font-weight:800;color:#4CAF50;margin-bottom:14px">'+code+'</div>'
-    +'<a href="?bc='+encodeURIComponent(code)+'" target="_top" style="display:block;background:#2196C4;'
-    +'color:#fff;text-decoration:none;border-radius:10px;padding:13px 24px;font-size:15px;'
-    +'font-weight:700;text-align:center">🔍 Search this barcode</a>'
-    +'<div style="margin-top:10px;font-size:12px;color:#888;text-align:center">or tap Cancel to rescan</div>';
+  d.innerHTML='<div style="font-size:13px;color:#aaa;margin-bottom:6px">Detected:</div>'
+    +'<div style="font-size:22px;font-weight:800;color:#4CAF50;margin-bottom:8px">✅ '+code+'</div>'
+    +'<div style="font-size:12px;color:#aaa">Loading results…</div>';
   d.style.display='block';
+  setTimeout(function(){
+    window.top.location.href = window.top.location.pathname + '?bc=' + encodeURIComponent(code);
+  }, 600);
 });
 </script>""", height=420)
         st.info("Scanner active above — point your camera at a barcode.")
