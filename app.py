@@ -300,9 +300,10 @@ with _C:
     sel_loc = store_locs[store_names.index(store_sel)]
 
     st.markdown('<span class="lbl-block" style="margin-top:10px">Barcode</span>', unsafe_allow_html=True)
+    if "bc_input" not in st.session_state:
+        st.session_state["bc_input"] = ""
     query = st.text_input("Barcode", placeholder="Scan or type barcode…",
-                          label_visibility="collapsed", key="bc_input",
-                          value=st.session_state.get("bc_val",""))
+                          label_visibility="collapsed", key="bc_input")
 
     c1, c2, c3 = st.columns([2, 5, 1])
     with c1:
@@ -318,10 +319,10 @@ with _C:
         clear = st.button("✕", use_container_width=True, key="btn_clr")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)  # .bar (no extra close needed — bar is inside wrap)
+    st.markdown('</div>', unsafe_allow_html=True)  # .bar
 
     if clear:
-        st.session_state["bc_val"] = ""
+        st.session_state["bc_input"] = ""
         st.rerun()
 
     # ── Results ───────────────────────────────────────────────────────────────
