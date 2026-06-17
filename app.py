@@ -400,7 +400,6 @@ with _C:
     <div class="stitle">🛒 Purchasing</div>
     <div class="grid">
       <div class="kv"><div class="k">Purchase YTD</div><div class="v oran">{fkwd(ytd_pur)}</div></div>
-      <div class="kv"><div class="k">Avg Monthly Purchase</div><div class="v oran">{fkwd(avg_pur)}</div></div>
     </div>
   </div>
   <div class="sec" style="border-left:4px solid #F5C500">
