@@ -37,7 +37,8 @@ Streamlit.setComponentReady();
 var detected = false;
 
 function sendCancel() {
-  Streamlit.setComponentValue(null);
+  try{Quagga.stop();}catch(e){}
+  Streamlit.setComponentValue("");
 }
 
 Quagga.init({

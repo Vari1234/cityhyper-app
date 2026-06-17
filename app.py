@@ -334,10 +334,13 @@ with _C:
 
     # ── Barcode scanner (proper bidirectional component) ─────────────────────
     if st.session_state.get("show_scanner"):
-        scanned = _barcode_scanner(key="scanner_comp")
+        scan_key = f"scanner_{st.session_state.get('scan_count', 0)}"
+        scanned = _barcode_scanner(key=scan_key)
         if scanned is not None:
             st.session_state["show_scanner"] = False
-            st.session_state["bc_input"] = scanned
+            st.session_state["scan_count"] = st.session_state.get("scan_count", 0) + 1
+            if scanned != "":  # empty string = cancel
+                st.session_state["bc_input"] = scanned
             st.rerun()
 
     # ── Results ───────────────────────────────────────────────────────────────
