@@ -259,6 +259,12 @@ if not _use_parquet() and not os.path.exists(DB_PATH):
     st.error("**Database not found.** Run `python setup_database.py` first.")
     st.stop()
 
+# ── Pre-fill barcode from scanner query param ─────────────────────────────────
+_qbc = st.query_params.get("bc", "")
+if _qbc and st.session_state.get("bc_input","") != _qbc:
+    st.session_state["bc_input"] = _qbc
+    st.query_params.clear()
+
 # ── Header ────────────────────────────────────────────────────────────────────
 n_prod, n_mon, n_stores = get_stats()
 
@@ -301,7 +307,8 @@ with _C:
 
     st.markdown('<span class="lbl-block" style="margin-top:10px">Barcode</span>', unsafe_allow_html=True)
     query = st.text_input("Barcode", placeholder="Scan or type barcode…",
-                          label_visibility="collapsed", key="bc_input")
+                          label_visibility="collapsed", key="bc_input",
+                          value=st.session_state.get("bc_input",""))
 
     c1, c2, c3 = st.columns([2, 5, 1])
     with c1:
@@ -363,8 +370,10 @@ Quagga.onDetected(function(r){
   try{Quagga.stop();}catch(e){}
   var d=document.getElementById('det');
   d.style.display='block';d.textContent='✅ '+code;
-  window.parent.postMessage({type:'scan_result',barcode:code},'*');
-  setTimeout(stopMe,1000);
+  setTimeout(function(){
+    var url=window.parent.location.href.split('?')[0]+'?bc='+encodeURIComponent(code);
+    window.parent.location.href=url;
+  },800);
 });
 </script>""", height=380)
         st.info("Scanner active above — point your camera at a barcode.")
