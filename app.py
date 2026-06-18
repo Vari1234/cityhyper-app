@@ -37,9 +37,9 @@ div[data-testid="stVerticalBlock"]>div:first-child{padding-top:0!important;margi
   box-shadow:0 4px 20px rgba(15,90,122,0.35)}
 .ch-header-inner{padding:20px 22px 16px}
 .ch-logo-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-.ch-logo-icon{width:40px;height:40px;background:rgba(255,255,255,0.15);
+.ch-logo-icon{width:44px;height:44px;background:#fff;
   border-radius:10px;display:flex;align-items:center;justify-content:center;
-  font-size:22px;backdrop-filter:blur(4px)}
+  padding:4px;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
 .ch-title{font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.3px}
 .ch-title span{color:#F5C500}
 .ch-subtitle{font-size:11px;color:rgba(255,255,255,0.6);font-weight:500;
@@ -275,7 +275,16 @@ with _C:
       <div class="ch-header">
         <div class="ch-header-inner">
           <div class="ch-logo-row">
-            <div class="ch-logo-icon">🏬</div>
+            <div class="ch-logo-icon">
+              <svg viewBox="0 0 100 100" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+                <clipPath id="c"><rect width="100" height="100"/></clipPath>
+                <g clip-path="url(#c)">
+                  <path d="M18 100 L18 42 Q18 5 52 5 Q86 5 86 42 L86 100 Z" fill="#F5C500"/>
+                  <path d="M10 58 Q10 100 52 100 Q94 100 94 58 Z" fill="#F07820"/>
+                  <path d="M22 62 Q22 96 56 96 Q90 96 90 62 Z" fill="#2196C4"/>
+                </g>
+              </svg>
+            </div>
             <div>
               <div class="ch-title">CityHyper <span>Hypermarket</span></div>
               <div class="ch-subtitle">Product Intelligence System</div>
