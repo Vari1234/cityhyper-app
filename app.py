@@ -267,6 +267,10 @@ if st.session_state.pop("_clear_requested", False):
 if "_pending_bc" in st.session_state:
     st.session_state["bc_input"] = st.session_state.pop("_pending_bc")
 
+# ── Close the camera scanner after a successful scan (before toggle renders) ──
+if st.session_state.pop("_close_scanner", False):
+    st.session_state["scan_on"] = False
+
 # ── Header ────────────────────────────────────────────────────────────────────
 n_prod, n_mon, n_stores = get_stats()
 
@@ -329,9 +333,11 @@ with _C:
         st.session_state["_clear_requested"] = True
         st.rerun()
 
-    # ── Camera scanner (st.camera_input + pyzbar) ───────────────────────────
-    with st.expander("📷  Scan barcode with camera"):
-        st.caption("Tap below to open the camera, fill the frame with the barcode, then snap. "
+    # ── Camera scanner (mounted only while toggled ON, so the camera is never
+    #    activated automatically on page load) ────────────────────────────────
+    scan_on = st.toggle("📷  Scan barcode with camera", key="scan_on")
+    if scan_on:
+        st.caption("Tap **Take Photo**, fill the frame with the barcode, then snap. "
                    "It reads automatically.")
         _img = st.camera_input("Scan barcode", key="cam", label_visibility="collapsed")
         if _img is not None:
@@ -346,6 +352,7 @@ with _C:
                     _code = _res[0].data.decode("utf-8", "ignore").strip()
                     if _code and _code != st.session_state.get("bc_input", ""):
                         st.session_state["_pending_bc"] = _code
+                        st.session_state["_close_scanner"] = True  # turn camera off
                         st.rerun()
                     else:
                         st.success(f"Detected: {_code}")
