@@ -3,8 +3,7 @@ CityHyper Hypermarket — Product Lookup App
 Run: streamlit run app.py
 """
 import streamlit as st
-import sqlite3, os, json, pandas as pd
-import streamlit.components.v1 as components
+import sqlite3, os, pandas as pd
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 DB_PATH  = os.path.join(os.path.dirname(__file__), "cityhyper.db")  # local fallback
@@ -264,13 +263,9 @@ if not _use_parquet() and not os.path.exists(DB_PATH):
 if st.session_state.pop("_clear_requested", False):
     st.session_state["bc_input"] = ""
 
-# ── Handle barcode returned from camera scanner (via URL query param) ─────────
-if "bc" in st.query_params:
-    st.session_state["bc_input"] = st.query_params.get("bc", "")
-    _qp_store = st.query_params.get("store")
-    if _qp_store:
-        st.session_state["store_sel"] = _qp_store
-    st.query_params.clear()
+# ── Apply barcode detected by the camera scanner (set before widget renders) ──
+if "_pending_bc" in st.session_state:
+    st.session_state["bc_input"] = st.session_state.pop("_pending_bc")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 n_prod, n_mon, n_stores = get_stats()
@@ -334,56 +329,30 @@ with _C:
         st.session_state["_clear_requested"] = True
         st.rerun()
 
-    # ── Live camera scanner ─────────────────────────────────────────────────
+    # ── Camera scanner (st.camera_input + pyzbar) ───────────────────────────
     with st.expander("📷  Scan barcode with camera"):
-        _scanner_html = """
-<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;text-align:center">
-  <div id="reader" style="width:100%;max-width:340px;margin:0 auto;border-radius:12px;overflow:hidden;background:#000"></div>
-  <div id="msg" style="margin-top:10px;font-size:13px;color:#666">Point the camera at a barcode…</div>
-  <div id="result" style="margin-top:10px"></div>
-</div>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script>
-var STORE = __STORE_JSON__;
-function go(code){
-  var base = window.top.location.pathname;
-  window.top.location.href = base + "?bc=" + encodeURIComponent(code) + "&store=" + encodeURIComponent(STORE);
-}
-function boot(){
-  if (typeof Html5Qrcode === 'undefined'){
-    document.getElementById('msg').innerText = 'Scanner failed to load — check your internet connection.';
-    return;
-  }
-  var fmts = [
-    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
-    Html5QrcodeSupportedFormats.UPC_A,  Html5QrcodeSupportedFormats.UPC_E,
-    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39
-  ];
-  var h5 = new Html5Qrcode("reader", { formatsToSupport: fmts, verbose:false });
-  var done = false;
-  function onScan(text){
-    if(done) return; done = true;
-    try{ h5.stop(); }catch(e){}
-    document.getElementById('reader').style.display='none';
-    document.getElementById('msg').innerText='Barcode detected:';
-    var r = document.getElementById('result');
-    r.innerHTML = '<div style="font-size:22px;font-weight:800;color:#0F5A7A;margin-bottom:10px">'+text+'</div>'
-      + '<button id="useb" style="background:#F07820;color:#fff;border:none;border-radius:10px;'
-      + 'padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer">Use this barcode &rarr;</button>';
-    document.getElementById('useb').addEventListener('click', function(){ go(text); });
-  }
-  h5.start({facingMode:"environment"}, {fps:10, qrbox:{width:260,height:150}}, onScan)
-    .catch(function(e){
-      document.getElementById('msg').innerText = 'Camera error: ' + e + '. Allow camera access, or use the phone camera + paste method.';
-    });
-}
-if (document.readyState === 'complete') boot();
-else window.addEventListener('load', boot);
-</script>
-"""
-        _scanner_html = _scanner_html.replace("__STORE_JSON__", json.dumps(store_sel))
-        components.html(_scanner_html, height=440)
-        st.caption("After it beeps/detects, tap **Use this barcode** to load the product.")
+        st.caption("Tap below to open the camera, fill the frame with the barcode, then snap. "
+                   "It reads automatically.")
+        _img = st.camera_input("Scan barcode", key="cam", label_visibility="collapsed")
+        if _img is not None:
+            try:
+                from pyzbar.pyzbar import decode as _zbar_decode
+                from PIL import Image as _PILImage, ImageOps as _ImageOps
+                _pic = _PILImage.open(_img)
+                _res = _zbar_decode(_pic)
+                if not _res:  # retry on a grayscale, auto-contrast version
+                    _res = _zbar_decode(_ImageOps.autocontrast(_pic.convert("L")))
+                if _res:
+                    _code = _res[0].data.decode("utf-8", "ignore").strip()
+                    if _code and _code != st.session_state.get("bc_input", ""):
+                        st.session_state["_pending_bc"] = _code
+                        st.rerun()
+                    else:
+                        st.success(f"Detected: {_code}")
+                else:
+                    st.warning("No barcode detected — get closer, hold steady, and ensure good lighting, then snap again.")
+            except Exception as _e:
+                st.error(f"Scanner error: {_e}")
 
 
     # ── Results ───────────────────────────────────────────────────────────────
