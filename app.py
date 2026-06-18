@@ -3,7 +3,8 @@ CityHyper Hypermarket — Product Lookup App
 Run: streamlit run app.py
 """
 import streamlit as st
-import sqlite3, os, pandas as pd
+import sqlite3, os, json, pandas as pd
+import streamlit.components.v1 as components
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 DB_PATH  = os.path.join(os.path.dirname(__file__), "cityhyper.db")  # local fallback
@@ -263,6 +264,14 @@ if not _use_parquet() and not os.path.exists(DB_PATH):
 if st.session_state.pop("_clear_requested", False):
     st.session_state["bc_input"] = ""
 
+# ── Handle barcode returned from camera scanner (via URL query param) ─────────
+if "bc" in st.query_params:
+    st.session_state["bc_input"] = st.query_params.get("bc", "")
+    _qp_store = st.query_params.get("store")
+    if _qp_store:
+        st.session_state["store_sel"] = _qp_store
+    st.query_params.clear()
+
 # ── Header ────────────────────────────────────────────────────────────────────
 n_prod, n_mon, n_stores = get_stats()
 
@@ -309,14 +318,7 @@ with _C:
     query = st.text_input("Barcode", placeholder="Scan or type barcode…",
                           label_visibility="collapsed", key="bc_input")
 
-    c1, c2, c3 = st.columns([2, 5, 1])
-    with c1:
-        st.markdown("""
-        <div style="background:linear-gradient(135deg,#0F5A7A,#2196C4);color:#fff;
-          border-radius:10px;padding:10px 8px;font-size:11px;font-weight:600;
-          text-align:center;line-height:1.5;box-shadow:0 3px 10px rgba(15,90,122,0.3)">
-          📷 Use phone camera<br>to scan → copy → paste
-        </div>""", unsafe_allow_html=True)
+    c2, c3 = st.columns([6, 1])
     with c2:
         st.markdown('<div class="go-btn">', unsafe_allow_html=True)
         st.button("🔍  Search", use_container_width=True, key="btn_go")
@@ -331,6 +333,57 @@ with _C:
     if clear:
         st.session_state["_clear_requested"] = True
         st.rerun()
+
+    # ── Live camera scanner ─────────────────────────────────────────────────
+    with st.expander("📷  Scan barcode with camera"):
+        _scanner_html = """
+<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;text-align:center">
+  <div id="reader" style="width:100%;max-width:340px;margin:0 auto;border-radius:12px;overflow:hidden;background:#000"></div>
+  <div id="msg" style="margin-top:10px;font-size:13px;color:#666">Point the camera at a barcode…</div>
+  <div id="result" style="margin-top:10px"></div>
+</div>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+var STORE = __STORE_JSON__;
+function go(code){
+  var base = window.top.location.pathname;
+  window.top.location.href = base + "?bc=" + encodeURIComponent(code) + "&store=" + encodeURIComponent(STORE);
+}
+function boot(){
+  if (typeof Html5Qrcode === 'undefined'){
+    document.getElementById('msg').innerText = 'Scanner failed to load — check your internet connection.';
+    return;
+  }
+  var fmts = [
+    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8,
+    Html5QrcodeSupportedFormats.UPC_A,  Html5QrcodeSupportedFormats.UPC_E,
+    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39
+  ];
+  var h5 = new Html5Qrcode("reader", { formatsToSupport: fmts, verbose:false });
+  var done = false;
+  function onScan(text){
+    if(done) return; done = true;
+    try{ h5.stop(); }catch(e){}
+    document.getElementById('reader').style.display='none';
+    document.getElementById('msg').innerText='Barcode detected:';
+    var r = document.getElementById('result');
+    r.innerHTML = '<div style="font-size:22px;font-weight:800;color:#0F5A7A;margin-bottom:10px">'+text+'</div>'
+      + '<button id="useb" style="background:#F07820;color:#fff;border:none;border-radius:10px;'
+      + 'padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer">Use this barcode &rarr;</button>';
+    document.getElementById('useb').addEventListener('click', function(){ go(text); });
+  }
+  h5.start({facingMode:"environment"}, {fps:10, qrbox:{width:260,height:150}}, onScan)
+    .catch(function(e){
+      document.getElementById('msg').innerText = 'Camera error: ' + e + '. Allow camera access, or use the phone camera + paste method.';
+    });
+}
+if (document.readyState === 'complete') boot();
+else window.addEventListener('load', boot);
+</script>
+"""
+        _scanner_html = _scanner_html.replace("__STORE_JSON__", json.dumps(store_sel))
+        components.html(_scanner_html, height=440)
+        st.caption("After it beeps/detects, tap **Use this barcode** to load the product.")
 
 
     # ── Results ───────────────────────────────────────────────────────────────
